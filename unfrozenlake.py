@@ -12,7 +12,7 @@ class Env:
 	RIGHT = 3
 	
 	def __init__(self):
-		self.pIndex = 0
+		self.pIndex = 0 #Player index, also the current state
 		self.lakeArray = numpy.zeros(16) #Initialize lake to all safe tiles
 		self.lakeArray[0] = self.START_TILE
 		self.lakeArray[15] = self.GOAL_TILE
@@ -122,6 +122,7 @@ for e in range(totalEps):
 		if done:
 			if reward == 1:
 				if prevSuccess == False:
+					#Record the first successful ep
 					prevSuccess = True
 					firstSuccessEp = e
 				totalSuccessEps += 1
