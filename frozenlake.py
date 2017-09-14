@@ -39,4 +39,4 @@ for i in range(totalEps):
 			break
 
 env.close()
-gym.upload('/tmp/recording', api_key='sk_fVhBRLT7S7e4MoHswIH5wg') #Uploads performance data
+#gym.upload('/tmp/recording', api_key='sk_fVhBRLT7S7e4MoHswIH5wg') #Uploads performance data
