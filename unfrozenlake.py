@@ -37,8 +37,11 @@ class Env:
 			self.moveMatrix[i][self.DOWN] = -1
 	
 	#Check if done
-	def isDone(self):
-		return self.pIndex == 15 or self.pIndex == 5 or self.pIndex == 7 or self.pIndex == 11 or self.pIndex == 12
+	def isWin(self):
+		return self.pIndex == 15
+		
+	def isFallen(self):
+		return self.pIndex == 5 or self.pIndex == 7 or self.pIndex == 11 or self.pIndex == 12
 	
 	#Execute the action and advance one timestep
 	def step(self, action):
@@ -48,10 +51,12 @@ class Env:
 		if newState == -1:
 			return (self.pIndex, reward, done)
 		self.pIndex = newState
-		if self.isDone():
+		if self.isWin():
 			done = True
-			if self.pIndex == 15:
-				reward = 1
+			reward = 1
+		elif self.isFallen():
+			done = True
+			reward = -1
 		
 		return (self.pIndex, reward, done)
 
