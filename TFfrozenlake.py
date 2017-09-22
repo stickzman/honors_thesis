@@ -25,7 +25,8 @@ init = tf.global_variables_initializer()
 
 # Set learning parameters
 y = .99
-e = 0.1
+e = 0.5
+initE = e
 num_episodes = 2000
 #create lists to contain total rewards and steps per episode
 jList = []
@@ -61,7 +62,8 @@ with tf.Session() as sess:
             if d == True:
                 #Reduce chance of random action as we train the model.
                 print("Episode finished after " + str(j) + " timesteps")
-                e = 1./((i/50) + 10)
+                #e = 1./((i/50) + 10) #Not agressive enough, sometimes never finds goal
+                e = initE - (i/num_episodes)
                 break
         jList.append(j)
         rList.append(rAll)
@@ -69,5 +71,6 @@ print("Percent of successful episodes: " + str((sum(rList)/num_episodes)*100) + 
 
 plt.plot(rList)
 
-plt.plot(jList)
+#plt.plot(jList)
 
+plt.show()

@@ -13,7 +13,7 @@ class Env:
 	HOLE_REWARD = -1 	
 	DEFAULT_REWARD = 0
 	
-	SLIP_PERCENT = .2
+	SLIP_PERCENT = 0
 
 	#Representation of tiles in lake array
 	SAFE_TILE = 0

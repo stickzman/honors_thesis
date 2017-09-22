@@ -10,7 +10,7 @@ class Env:
 	HOLE_REWARD = -1
 	DEFAULT_REWARD = 0
 	
-	SLIP_PERCENT = 0
+	SLIP_PERCENT = .3
 
 	#Representation of tiles in lake array
 	SAFE_TILE = 0
@@ -109,6 +109,8 @@ class Env:
 		return self.pIndex
 		
 
+		
+lr = .1
 
 tf.reset_default_graph()
 
@@ -121,7 +123,7 @@ predict = tf.argmax(Qout,1)
 #Below we obtain the loss by taking the sum of squares difference between the target and prediction Q values.
 nextQ = tf.placeholder(shape=[1,4],dtype=tf.float32)
 loss = tf.reduce_sum(tf.square(nextQ - Qout))
-trainer = tf.train.GradientDescentOptimizer(learning_rate=0.1)
+trainer = tf.train.GradientDescentOptimizer(learning_rate=lr)
 updateModel = trainer.minimize(loss)
 
 init = tf.global_variables_initializer()
