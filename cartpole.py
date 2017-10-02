@@ -4,7 +4,7 @@ import gym
 import tensorflow as tf
 import matplotlib.pyplot as plt
 
-learningRate = 0.1
+learningRate = 0.02
 
 env = gym.make("CartPole-v0")
 
@@ -29,21 +29,24 @@ sess = tf.Session()
 sess.run(init)
 
 
-discountRate = 0.5
-e = 0.5
+discountRate = 0.1
+e = .5
 
 totalEps = 2000
 
-tList = []
+rList = []
+
 with tf.Session() as sess:
 	sess.run(init)
 	for i in range(totalEps):
+		rAll = 0
+		first = False
 		obs = env.reset()
-		for t in range(100):
+		for t in range(200):
 			action = sess.run(chosenAction, {observations: [obs]})[0]
 			qVals = sess.run(Qvals, {observations: [obs]})
-			if np.random.rand(1) < e:
-				action = random.randint(0, 1)
+			#if np.random.rand(1) < e:
+			#	action = random.randint(0, 1)
 			newObs, reward, done, _ = env.step(action)
 			#if done == True: reward = -1
 			newQvals = sess.run(Qvals, {observations: [newObs]})
@@ -52,16 +55,16 @@ with tf.Session() as sess:
 			#Update the model
 			sess.run(update, {realQvals: qVals, observations: [obs]})
 			obs = newObs
-			#env.render()
-			
+			#if i%500 == 0: env.render()
+			rAll += reward
 			if done == True:
-				print("Completed episode " + str(i))
 				e = 1/(i+1)
 				#e = 1./((i/50) + 10)
 				break
-		tList.append(t)
+		rList.append(rAll)
+		print("Completed episode " + str(i))
 
-#Graph the amount of timesteps the pole was balanced for each episode
-plt.plot(tList)
+#Graph the total rewards per episode
+plt.plot(rList)
 
 plt.show()

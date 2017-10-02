@@ -11,7 +11,7 @@ tf.reset_default_graph()
 
 #These lines establish the feed-forward part of the network used to choose actions
 inputs1 = tf.placeholder(shape=[1,16],dtype=tf.float32)
-W = tf.Variable(tf.random_uniform([16,4],0,0.01))
+W = tf.Variable(tf.random_uniform([16,4],0,0.1))
 Qout = tf.matmul(inputs1,W)
 predict = tf.argmax(Qout,1)
 
@@ -29,7 +29,7 @@ e = 0.5
 initE = e
 num_episodes = 2000
 #create lists to contain total rewards and steps per episode
-jList = []
+lossList = []
 rList = []
 with tf.Session() as sess:
     sess.run(init)
@@ -56,6 +56,7 @@ with tf.Session() as sess:
             targetQ[0,a[0]] = r + y*maxQ1
             #Train our network using target and predicted Q values
             _,W1 = sess.run([updateModel,W],feed_dict={inputs1:np.identity(16)[s:s+1],nextQ:targetQ})
+            if d == True: lossList.append(sess.run(loss, {nextQ:targetQ, inputs1:np.identity(16)[s:s+1]}))
             rAll += r
             s = s1
             env.render()
@@ -65,12 +66,11 @@ with tf.Session() as sess:
                 #e = 1./((i/50) + 10) #Not agressive enough, sometimes never finds goal
                 e = initE - (i/num_episodes)
                 break
-        jList.append(j)
         rList.append(rAll)
 print("Percent of successful episodes: " + str((sum(rList)/num_episodes)*100) + "%")
 
 plt.plot(rList)
 
-#plt.plot(jList)
+#plt.plot(lossList)
 
 plt.show()
