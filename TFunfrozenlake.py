@@ -17,10 +17,10 @@ Qout = tf.matmul(inputs1,W)
 predict = tf.argmax(Qout,1)
 
 #Below we obtain the loss by taking the sum of squares difference between the target and prediction Q values.
-nextQ = tf.placeholder(shape=[1,4],dtype=tf.float32)
+nextQ = tf.placeholder(shape=[1,2],dtype=tf.float32)
 loss = tf.reduce_sum(tf.square(nextQ - Qout))
-trainer = tf.train.GradientDescentOptimizer(learning_rate=lr)
-updateModel = trainer.minimize(loss)
+trainer = tf.train.GradientDescentOptimizer(learning_rate=qVal_lr)
+updateQVals = trainer.minimize(loss)
 
 init = tf.global_variables_initializer()
 
