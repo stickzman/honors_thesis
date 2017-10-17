@@ -57,10 +57,10 @@ output_pol = slim.fully_connected(hidden_pol_layer, 2, biases_initializer=None, 
 action_holder = tf.placeholder(shape=[1],dtype=tf.int32)
 advantage_holder = tf.placeholder(shape=[1], dtype=tf.float32)
 
-#indexes = tf.range(0, tf.shape(output_pol)[0]) * tf.shape(output_pol)[1] + action_holder
-#responsible_outputs = tf.gather(tf.reshape(output_pol, [-1]), indexes)
-responsible_outputs_array = tf.slice(output_pol, [0, action_holder[0]], [tf.shape(output_pol)[0], 1])
-responsible_outputs = tf.reshape(responsible_outputs_array, [-1])
+indexes = tf.range(0, tf.shape(output_pol)[0]) * tf.shape(output_pol)[1] + action_holder
+responsible_outputs = tf.gather(tf.reshape(output_pol, [-1]), indexes)
+#responsible_outputs_array = tf.slice(output_pol, [0, action_holder[0]], [tf.shape(output_pol)[0], 1])
+#responsible_outputs = tf.reshape(responsible_outputs_array, [-1])
 
 pol_loss = -tf.reduce_mean(tf.log(responsible_outputs)*advantage_holder)
 

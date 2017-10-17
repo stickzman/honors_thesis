@@ -43,7 +43,8 @@ with tf.Session() as sess:
 	i = 0
 	total_reward = []
 	total_length = []
-		
+	batch_hist = []
+	
 	gradBuffer = sess.run(tf.trainable_variables())
 	for ix,grad in enumerate(gradBuffer):
 		gradBuffer[ix] = grad * 0
@@ -57,7 +58,7 @@ with tf.Session() as sess:
 			a_dist = sess.run(myAgent.output,feed_dict={myAgent.state_in:[s]})
 			a = np.random.choice(a_dist[0],p=a_dist[0])
 			a = np.argmax(a_dist == a)
-
+			#if i%1000 == 0: env.render()
 			s1,r,d,_ = env.step(a) #Get our reward for taking an action given a bandit.
 			ep_history.append([s,a,r,s1])
 			s = s1
@@ -66,17 +67,24 @@ with tf.Session() as sess:
 				#Update the network.
 				ep_history = np.array(ep_history)
 				ep_history[:,2] = discount_rewards(ep_history[:,2])
+				for timestep in ep_history:
+					batch_hist.append(timestep)
 				feed_dict={myAgent.reward_holder:ep_history[:,2],
 						myAgent.action_holder:ep_history[:,1],myAgent.state_in:np.vstack(ep_history[:,0])}
-				grads = sess.run(myAgent.gradients, feed_dict=feed_dict)
-				for idx,grad in enumerate(grads):
-					gradBuffer[idx] += grad
+				#grads = sess.run(myAgent.gradients, feed_dict=feed_dict)
+				#for idx,grad in enumerate(grads):
+				#	gradBuffer[idx] += grad
 					
 				if i % update_frequency == 0 and i != 0:
-					feed_dict= dictionary = dict(zip(myAgent.gradient_holders, gradBuffer))
-					sess.run(myAgent.update_batch, feed_dict=feed_dict)
+					batch_hist = np.array(batch_hist)
+					feed_dict={myAgent.reward_holder:batch_hist[:,2],
+						myAgent.action_holder:batch_hist[:,1],myAgent.state_in:np.vstack(batch_hist[:,0])}
+					sess.run(myAgent.min_loss, feed_dict)
+					#feed_dict= dictionary = dict(zip(myAgent.gradient_holders, gradBuffer))
+					#sess.run(myAgent.update_batch, feed_dict=feed_dict)
 					for ix,grad in enumerate(gradBuffer):
 						gradBuffer[ix] = grad * 0
+					batch_hist = []
 				
 				total_reward.append(running_reward)
 				total_length.append(j)
