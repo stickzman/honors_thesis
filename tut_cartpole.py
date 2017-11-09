@@ -30,7 +30,7 @@ tf.reset_default_graph() #Clear the Tensorflow graph.
 myAgent = agent(lr=1e-2,s_size=4,a_size=2,h_size=8) #Load the agent.
 
 total_episodes = 5000 #Set total number of episodes to train agent on.
-max_ep = 999
+max_ep = 201
 update_frequency = 25
 
 init = tf.global_variables_initializer()
@@ -43,7 +43,6 @@ with tf.Session() as sess:
 	i = 0
 	total_reward = []
 	total_length = []
-	batch_hist = []
 	
 	gradBuffer = sess.run(tf.trainable_variables())
 	for ix,grad in enumerate(gradBuffer):
@@ -67,24 +66,17 @@ with tf.Session() as sess:
 				#Update the network.
 				ep_history = np.array(ep_history)
 				ep_history[:,2] = discount_rewards(ep_history[:,2])
-				for timestep in ep_history:
-					batch_hist.append(timestep)
 				feed_dict={myAgent.reward_holder:ep_history[:,2],
 						myAgent.action_holder:ep_history[:,1],myAgent.state_in:np.vstack(ep_history[:,0])}
-				#grads = sess.run(myAgent.gradients, feed_dict=feed_dict)
-				#for idx,grad in enumerate(grads):
-				#	gradBuffer[idx] += grad
+				grads = sess.run(myAgent.gradients, feed_dict=feed_dict)
+				for idx,grad in enumerate(grads):
+					gradBuffer[idx] += grad
 					
 				if i % update_frequency == 0 and i != 0:
-					batch_hist = np.array(batch_hist)
-					feed_dict={myAgent.reward_holder:batch_hist[:,2],
-						myAgent.action_holder:batch_hist[:,1],myAgent.state_in:np.vstack(batch_hist[:,0])}
-					sess.run(myAgent.min_loss, feed_dict)
-					#feed_dict= dictionary = dict(zip(myAgent.gradient_holders, gradBuffer))
-					#sess.run(myAgent.update_batch, feed_dict=feed_dict)
+					feed_dict= dictionary = dict(zip(myAgent.gradient_holders, gradBuffer))
+					sess.run(myAgent.update_batch, feed_dict=feed_dict)
 					for ix,grad in enumerate(gradBuffer):
 						gradBuffer[ix] = grad * 0
-					batch_hist = []
 				
 				total_reward.append(running_reward)
 				total_length.append(j)
@@ -98,7 +90,7 @@ with tf.Session() as sess:
 		i += 1
 		
 avgX = np.linspace(0, len(total_reward), len(avg_rewards))
-#plt.plot(total_reward)
-#plt.plot(avgX, avg_rewards)
-plt.plot(avg_rewards)
+plt.plot(total_reward)
+plt.plot(avgX, avg_rewards)
+#plt.plot(avg_rewards)
 plt.show()

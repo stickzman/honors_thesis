@@ -31,5 +31,4 @@ class agent():
 		self.gradients = tf.gradients(self.loss,tvars)
 		
 		optimizer = tf.train.AdamOptimizer(learning_rate=lr)
-		self.min_loss = optimizer.minimize(self.loss)
 		self.update_batch = optimizer.apply_gradients(zip(self.gradient_holders,tvars))

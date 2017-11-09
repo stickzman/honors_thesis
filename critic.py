@@ -8,21 +8,11 @@ env = gym.make("CartPole-v0")
 
 val_lr = 0.01
 pol_lr = 0.001
-discount_rate = .99
+discount_rate = .98
 state_size = 4
 
 max_eps = 5000
 max_timesteps = 201
-
-
-def discount_rewards(r):
-	""" take 1D float array of rewards and compute discounted reward """
-	discounted_r = np.zeros_like(r)
-	running_add = 0
-	for t in reversed(range(0, r.size)):
-		running_add = running_add * discount_rate + r[t]
-		discounted_r[t] = running_add
-	return discounted_r
 
 #Define Tensorflow graph
 tf.reset_default_graph()
@@ -69,6 +59,9 @@ with tf.Session() as sess:
 		for t in range(max_timesteps):
 			a_dist = sess.run(pol_output, {state_in:[s]})
 			a = np.random.choice(len(a_dist[0]), p=a_dist[0])
+			#print(sess.run(value_output, {state_in:[s]}))
+			#a = np.random.choice([0, 1])
+			
 			next_state, r, d, _ = env.step(a)
 			ep_history.append([s, r])
 			#env.render()
@@ -79,21 +72,25 @@ with tf.Session() as sess:
 			advantage = next_state_value[0] - state_value[0]
 			sess.run(update_pol, {state_in:[s], action_holder:[a], advantage_holder:advantage})
 			
+			#Update Values
+			next_state_value = sess.run(value_output, {state_in:[next_state]})
+			state_value = r + discount_rate * (next_state_value[0])
+			sess.run(update_values, {state_in:[s], value_holder: [state_value]})
+			
 			s = next_state
 			ep_rewards += r
 			if d:
+				#print("------------------------------------")
 				total_rewards.append(ep_rewards)
 				if epNum%100 == 0:
 					avg_rewards.append(np.mean(total_rewards[-100:]))
 					print(str(epNum/max_eps*100) + "%")
 				break
 		#Update Critic		
-		ep_history = np.array(ep_history)
-		disc_rews = discount_rewards(ep_history[:,1])
-		print(sess.run(value_output, {state_in:np.vstack(ep_history[:,0])}))
-		print("-------------------------------")
+		#ep_history = np.array(ep_history)
+		#disc_rews = discount_rewards(ep_history[:,1])
 		#print(sess.run(val_loss, {value_holder:np.vstack(disc_rews), state_in:np.vstack(ep_history[:,0])}))
-		sess.run(update_values, {value_holder:np.vstack(disc_rews), state_in:np.vstack(ep_history[:,0])})
+		#sess.run(update_values, {value_holder:np.vstack(disc_rews), state_in:np.vstack(ep_history[:,0])})
 		
 avgX = np.linspace(0, len(total_rewards), len(avg_rewards))
 plt.plot(total_rewards)

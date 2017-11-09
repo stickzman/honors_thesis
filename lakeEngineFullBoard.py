@@ -74,7 +74,7 @@ class Env:
 		
 		return (self.pIndex, reward, done)
 		
-	def convertState(self, pIndex):
+	def getBoard(self):
 		'''
 		stateArr = np.empty([4, 4])
 		for i in range(4):
@@ -82,9 +82,7 @@ class Env:
 				stateArr[i, j] = self.lakeArray[i*4+j]
 		stateArr[self.pIndex//4, self.pIndex%4] = self.PLAYER_TILE
 		'''
-		stateArr = self.lakeArray.copy()
-		stateArr[pIndex] = self.PLAYER_TILE
-		return stateArr
+		return self.lakeArray.copy();
 		
 	def move(self, action):
 		rnd = random.random()
@@ -122,4 +120,4 @@ class Env:
 	#Reset the environment
 	def reset(self):
 		self.pIndex = 0
-		return self.pIndex
+		return self.getBoard(), self.pIndex;
