@@ -1,14 +1,32 @@
 import numpy as np
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
+import gym
 
 class Indv:	
-	def __init__(self, sess):
+	def __init__(self, sess, env, maxW=1, minW=0):
+		self.done = False
+		self.input = env.reset()
 		self.sess = sess
 		self.genome = []
 		for var in tf.trainable_variables():
 			size = sess.run(tf.size(var))#Get flattened size of variable
-			self.genome.extend(np.random.rand(size))
+			self.genome.extend((np.random.rand(size) * (maxW-minW)) + minW)
+		self.weightDict = self.buildWeightDict()
+			
+	def step(self):
+		if not self.done:
+			feed_dict = self.weightDict.copy()
+			feed_dict[state_in] = [self.input]
+			a_dist = self.sess.run(output,feed_dict)
+			#Stochastic Selection
+			#a = np.random.choice(a_dist[0],p=a_dist[0])
+			#a = np.argmax(a_dist == a)
+			#Deterministic Selection
+			a = np.argmax(a_dist)
+			print(a_dist)
+			self.input, r, self.done, _ = env.step(a)
+			env.render()
 		
 	def __buildTensor(self, shape, i):
 		if len(shape) == 1:
@@ -23,7 +41,7 @@ class Indv:
 				tensor.append(self.__buildTensor(shape[1:], i))
 			return tensor
 			
-	def buildFeedDict(self):
+	def buildWeightDict(self):
 		feed_dict = {}
 		i = 0
 		for var in tf.trainable_variables():
@@ -33,17 +51,23 @@ class Indv:
 		return feed_dict
 		
 		
-tf.reset_default_graph()
+s_size = 4
+h_size = 10
+a_size = 2		
 
-i = tf.placeholder(shape=[2,3, 1],dtype=tf.float32)
-h = slim.fully_connected(i, 5, biases_initializer=None)
-out = slim.fully_connected(h, 1, activation_fn=None, biases_initializer=None)
-
-init = tf.global_variables_initializer()		
+tf.reset_default_graph() #Clear the Tensorflow graph.
+		
+#These lines established the feed-forward part of the network. The agent takes a state and produces an action.
+state_in= tf.placeholder(shape=[1 , s_size],dtype=tf.float32)
+hidden = slim.fully_connected(state_in, h_size, biases_initializer=None)
+output = slim.fully_connected(hidden, a_size, biases_initializer=None, activation_fn=tf.nn.softmax)
+init = tf.global_variables_initializer()
 
 sess = tf.Session()
-agent = Indv(sess)
+sess.run(init)
 
-feed_dict = agent.buildFeedDict()
-feed_dict[i] = [[[1], [2], [3]], [[4],[2],[1]]]
-print(sess.run(out, feed_dict))
+env = gym.make('CartPole-v0')
+agent = Indv(sess, env, 5, -10)
+
+while not agent.done:
+	agent.step()
