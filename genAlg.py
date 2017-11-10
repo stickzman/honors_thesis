@@ -3,15 +3,42 @@ import tensorflow as tf
 import tensorflow.contrib.slim as slim
 import gym
 
-class Indv:	
-	def __init__(self, sess, env, maxW=1, minW=0):
-		self.done = False
-		self.input = env.reset()
+class Population:
+	def __init__(self, envName, sess, genSize):
+		self.gen = []
 		self.sess = sess
-		self.genome = []
-		for var in tf.trainable_variables():
-			size = sess.run(tf.size(var))#Get flattened size of variable
-			self.genome.extend((np.random.rand(size) * (maxW-minW)) + minW)
+		for i in range(genSize):
+			self.gen.append(Indv(sess, gym.make(envName)))
+			
+	def runGen(self):
+		while self.__minOneAgentRunning():
+			for agent in self.gen:
+				agent.step()
+		fit = self.__getFitness()
+		print(fit)
+		
+	
+	
+	def __getFitness(self):
+		fitness = []
+		for agent in self.gen:
+			fitness.append(agent.fitness)
+		return fitness
+		
+	def __minOneAgentRunning(self):
+		res = False
+		for indv in self.gen:
+			if indv.done == False: res = True
+		return res
+	
+class Indv:	
+	def __init__(self, sess, env, minW=0, maxW=1, genome=None):
+		self.env = env
+		self.sess = sess
+		self.maxW = maxW
+		self.minW = minW
+		self.__genGenome()
+		self.reset()
 		self.weightDict = self.buildWeightDict()
 			
 	def step(self):
@@ -19,14 +46,17 @@ class Indv:
 			feed_dict = self.weightDict.copy()
 			feed_dict[state_in] = [self.input]
 			a_dist = self.sess.run(output,feed_dict)
+			
 			#Stochastic Selection
 			#a = np.random.choice(a_dist[0],p=a_dist[0])
 			#a = np.argmax(a_dist == a)
+			
 			#Deterministic Selection
 			a = np.argmax(a_dist)
-			print(a_dist)
-			self.input, r, self.done, _ = env.step(a)
-			env.render()
+			
+			self.input, r, self.done, _ = self.env.step(a)
+			self.fitness += r
+			#self.env.render()
 		
 	def __buildTensor(self, shape, i):
 		if len(shape) == 1:
@@ -50,6 +80,24 @@ class Indv:
 			feed_dict[var] = tensor
 		return feed_dict
 		
+	def __genGenome(self):
+		self.genome = []
+		for var in tf.trainable_variables():
+			size = sess.run(tf.size(var))#Get flattened size of variable
+			self.genome.extend((np.random.rand(size) * (self.maxW-self.minW)) + self.minW)
+		
+	def reset(self, genome=None):
+		if genome!=None: self.updateGenome(genome)
+		self.done = False
+		self.input = self.env.reset()
+		self.fitness = 0
+		
+	def updateGenome(self, genome=None):
+		if genome==None:
+			self.__genGenome()
+		else:
+			self.genome = genome
+		
 		
 s_size = 4
 h_size = 10
@@ -66,8 +114,17 @@ init = tf.global_variables_initializer()
 sess = tf.Session()
 sess.run(init)
 
-env = gym.make('CartPole-v0')
-agent = Indv(sess, env, 5, -10)
 
-while not agent.done:
-	agent.step()
+pop = Population('CartPole-v0', sess, 5)
+pop.runGen()
+'''
+agent1 = Indv(sess, gym.make('CartPole-v0'))
+
+agent2 = Indv(sess, gym.make('CartPole-v0'))
+
+while not agent1.done or not agent2.done:
+	agent1.step()
+	agent2.step()
+print(agent1.fitness)
+print(agent2.fitness)
+'''
