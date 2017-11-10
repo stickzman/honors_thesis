@@ -2,11 +2,17 @@ import numpy as np
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
 import gym
+import matplotlib.pyplot as plt
 
-class Population:
-	def __init__(self, envName, sess, genSize, numParents, numGens, minW=0, maxW=1, crossoverProb=.90):
+class Population:	
+	def __init__(self, envName, sess, genSize, numParents, numGens, minW=0, maxW=1, crsProb=.90, mutProb=.0001):
+		self.best = []
+		self.avg = []
+		self.minW = minW
+		self.maxW = maxW
+		self.mutProb = mutProb
 		self.numGens = numGens
-		self.crossoverProb = crossoverProb
+		self.crossoverProb = crsProb
 		self.numParents = numParents//2*2
 		self.gen = []
 		self.sess = sess
@@ -20,7 +26,8 @@ class Population:
 			self.__crossover(parents)
 			for agent in self.gen:
 				if agent.done:
-					if agent not in parents: agent.updateGenome()
+					if agent not in parents:
+						agent.updateGenome()
 					agent.reset()
 		
 			
@@ -29,14 +36,33 @@ class Population:
 			for agent in self.gen:
 				agent.step()
 		fit = self.__getFitness()
-		print("Avg fitness: " + str(np.average(fit)),  "Best fitness: " + str(np.amax(fit)))
+		'''
+		worseAgent = self.gen[np.argsort(fit)[0]]
+		worseAgent.reset()
+		bestAgent = self.gen[np.argsort(fit)[-1]]
+		bestAgent.reset()
+		while not worseAgent.done:
+			worseAgent.step(True)
+		while not bestAgent.done:
+			bestAgent.step(True)
+		'''
+		self.avg.append(np.average(fit))
+		self.best.append(np.amax(fit))
+		print("Avg fitness: " + str(self.avg[-1]),  "Best fitness: " + str(self.best[-1]))
 		
 	def __parentSelection(self):
+		'''
 		probs = self.__getProbs()
 		parentProbs = np.random.choice(probs, self.numParents, False, probs)
 		parents = []
 		for parent in parentProbs:
 			parents.append(self.gen[np.argmax(probs == parent)])
+		'''
+		fitness = self.__getFitness()
+		idxs = np.argsort(fitness)[-self.numParents:]
+		parents = []
+		for id in idxs:
+			parents.append(self.gen[id])
 		return parents
 		
 	def __crossover(self, parents):
@@ -52,12 +78,25 @@ class Population:
 					newG.append(gene1)
 				else:
 					newG.append(gene2)
+			newG = self.__mutate(newG)
 			offspringGenes.append(newG)
 		weakIdxs = np.argsort(self.__getFitness)[:len(offspringGenes)]
 		for weakId, gene in zip(weakIdxs, offspringGenes):
 			self.gen[i].reset(gene)
 			
-			
+	def __mutate(self, gene):
+		for g in gene:
+			if np.random.rand() < self.mutProb:
+				#print("MUTATION")
+				g = (np.random.rand() * (self.maxW-self.minW)) + self.minW
+		return gene
+		'''
+		idx = np.random.choice(range(len(gene)), numMutations)
+		for i in idx:
+			gene[i] = (np.random.rand() * (self.maxW-self.minW)) + self.minW
+		return gene
+		'''
+		
 		
 	def __getProbs(self):
 		fitness = self.__getFitness()
@@ -89,9 +128,9 @@ class Indv:
 		self.minW = minW
 		self.__genGenome()
 		self.reset()
-		self.weightDict = self.buildWeightDict()
+		self.__buildWeightDict()
 			
-	def step(self):
+	def step(self, render=False):
 		if not self.done:
 			feed_dict = self.weightDict.copy()
 			feed_dict[state_in] = [self.input]
@@ -106,7 +145,7 @@ class Indv:
 			
 			self.input, r, self.done, _ = self.env.step(a)
 			self.fitness += r
-			#self.env.render()
+			if render: self.env.render()
 		
 	def __buildTensor(self, shape, i):
 		if len(shape) == 1:
@@ -121,14 +160,14 @@ class Indv:
 				tensor.append(self.__buildTensor(shape[1:], i))
 			return tensor
 			
-	def buildWeightDict(self):
+	def __buildWeightDict(self):
 		feed_dict = {}
 		i = 0
 		for var in tf.trainable_variables():
 			shape = sess.run(tf.shape(var))
 			tensor = self.__buildTensor(shape, i)
 			feed_dict[var] = tensor
-		return feed_dict
+		self.weightDict = feed_dict
 		
 	def __genGenome(self):
 		self.genome = []
@@ -147,6 +186,7 @@ class Indv:
 			self.__genGenome()
 		else:
 			self.genome = genome
+		self.__buildWeightDict
 		
 		
 s_size = 4
@@ -165,5 +205,9 @@ sess = tf.Session()
 sess.run(init)
 
 
-pop = Population('CartPole-v0', sess, genSize=50, numParents=25, numGens=40, maxW=10)
+pop = Population('CartPole-v0', sess, genSize=30, numParents=20, numGens=25, minW=0, maxW=100, mutProb=0.009)
 pop.run()
+
+plt.plot(pop.best)
+plt.plot(pop.avg)
+plt.show()
