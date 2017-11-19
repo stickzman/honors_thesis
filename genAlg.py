@@ -25,7 +25,7 @@ sess.run(init)
 
 
 
-pop = Population('CartPole-v0', sess, state_in, output, genSize=25, numParents=15, genLength=30, numGens=10, minW=0, maxW=100, mutProb=0.001)
+pop = Population('CartPole-v0', sess, state_in, output, genSize=25, numParents=15, genLength=5, numGens=10, minW=0, maxW=100, mutProb=0.001)
 pop.run()
 #bestAgent = pop.getBestAgent()
 #bestAgent.viewRun()

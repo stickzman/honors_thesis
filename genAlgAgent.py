@@ -3,6 +3,7 @@ import tensorflow as tf
 import tensorflow.contrib.slim as slim
 import gym
 import matplotlib.pyplot as plt
+import hashlib
 
 
 class Population:	
@@ -23,6 +24,8 @@ class Population:
 	def run(self):
 		for i in range(self.numGens):
 			self.runGen()
+			print("-------Gen " + str(i) + "-------")
+			self.displayGen()
 			parents = self.__parentSelection()
 			self.__crossover(parents)
 			for agent in self.gen:
@@ -40,6 +43,14 @@ class Population:
 		fit = self.__getFitness()
 		self.best.append(np.amax(fit))
 		print("Best fitness: " + str(self.best[-1]))
+		
+	def displayGen(self):
+		gen = []
+		fitIDs = np.argsort(self.__getFitness())
+		for id in fitIDs:
+			gen.append(self.gen[id])
+		for agent in gen:
+			print("ID: " + str(agent.id), "Fitness: " + str(agent.avgFitness()))
 		
 	def getBestAgent(self):
 		fit = self.__getFitness()
@@ -186,6 +197,7 @@ class Indv:
 		
 	def reset(self, genome=None):
 		if genome!=None: self.updateGenome(genome)
+		self.id = hash(tuple(self.genome))
 		self.done = False
 		self.input = self.env.reset()
 		self.fitness = 0
