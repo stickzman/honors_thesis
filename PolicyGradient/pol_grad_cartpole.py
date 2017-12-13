@@ -1,14 +1,16 @@
+import tensorflow as tf
+import tensorflow.contrib.slim as slim
 import numpy as np
 import gym
-from PolicyGradient.policy_gradient_agent import Agent
 import matplotlib.pyplot as plt
+from policy_gradient_agent import Agent
 
-env = gym.make("MountainCar-v0")
+env = gym.make('CartPole-v0')
 
-agent = Agent(lr=.1,s_size=2, a_size=3, h_size=8, b_size=25, gamma=.5)
+myAgent = Agent(lr=1e-2, s_size=4, a_size=2, h_size=8, b_size=10, gamma=.99) #Load the agent.
 
-total_episodes = 1000 #Set total number of episodes to train agent on.
-max_ep_length = 999
+total_episodes = 5000 #Set total number of episodes to train agent on.
+max_ep_length = 201
 
 i = 0
 total_reward = []
@@ -17,12 +19,12 @@ avg_rewards = []
 for i in range(total_episodes):
 	s = env.reset()
 	running_reward = 0
-	for t in range(max_ep_length):
+	for j in range(max_ep_length):
 		#Probabilistically pick an action given our network outputs.
-		a = agent.chooseAction(s)
+		a = myAgent.chooseAction(s)
 		#if i%1000 == 0: env.render()
 		s1,r,d,_ = env.step(a) #Get our reward for taking an action given a bandit.
-		agent.observe(s, a, r, d)
+		myAgent.observe(s, a, r, d)
 		s = s1
 		running_reward += r
 		if d == True:
