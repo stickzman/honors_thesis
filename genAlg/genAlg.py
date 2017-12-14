@@ -3,18 +3,27 @@ import tensorflow as tf
 import tensorflow.contrib.slim as slim
 import gym
 import matplotlib.pyplot as plt
-import sys
 from genAlgAgent import Population
 from genAlgAgent14Genes import Population as Population14G
 from genAlgAgent10Genes import Population as Population10G
+import argparse
 
-genSize=25
-numParents=10
-genLength=20
-numGens=10
-minW=0
-maxW=100
-mutProb=0.01
+parser = argparse.ArgumentParser()
+#Choose the number of genes to use with -g=[10, 14, or 60]
+parser.add_argument("-g", "-geneType", type=int, default=60, choices=[10, 14, 60])
+#Set the numpy random seed using -s
+parser.add_argument("-s", "-seed", type=int, default=-1)
+#Set agent to choose actions deterministically instead of stochastically
+parser.add_argument("-d", "-deterministic", type=bool, default=False)
+args = parser.parse_args()
+
+populationSize=10
+numParents=4
+generationLength=20
+numGenerations=10
+minWeight=0
+maxWeight=100
+mutationProb=0.01
 
 
 s_size = 4
@@ -32,16 +41,15 @@ init = tf.global_variables_initializer()
 sess = tf.Session()
 sess.run(init)
 
-if len(sys.argv) > 2:
-	seed = int(sys.argv[2])
-	np.random.seed(seed)
+if args.s != -1:
+	np.random.seed(args.s)
 
-if len(sys.argv) <= 1 or sys.argv[1] == "0":
-	pop = Population('CartPole-v0', sess, state_in, output, genSize=genSize, numParents=numParents, genLength=genLength, numGens=numGens, minW=minW, maxW=maxW, mutProb=mutProb)
-elif sys.argv[1] == "14":
-	pop = Population14G('CartPole-v0', sess, state_in, output, genSize=genSize, numParents=numParents, genLength=genLength, numGens=numGens, minW=minW, maxW=maxW, mutProb=mutProb)
-elif sys.argv[1] == "10":
-	pop = Population10G('CartPole-v0', sess, state_in, output, genSize=genSize, numParents=numParents, genLength=genLength, numGens=numGens, minW=minW, maxW=maxW, mutProb=mutProb)
+if args.g == 60:
+	pop = Population('CartPole-v0', sess, state_in, output, genSize=populationSize, numParents=numParents, genLength=generationLength, numGens=numGenerations, minW=minWeight, maxW=maxWeight, mutProb=mutationProb, deterministic=args.d)
+elif args.g == 14:
+	pop = Population14G('CartPole-v0', sess, state_in, output, genSize=populationSize, numParents=numParents, genLength=generationLength, numGens=numGenerations, minW=minWeight, maxW=maxWeight, mutProb=mutationProb, deterministic=args.d)
+elif args.g == 10:
+	pop = Population10G('CartPole-v0', sess, state_in, output, genSize=populationSize, numParents=numParents, genLength=generationLength, numGens=numGenerations, minW=minWeight, maxW=maxWeight, mutProb=mutationProb, deterministic=args.d)
 	
 pop.run()
 #bestAgent = pop.getBestAgent()

@@ -7,8 +7,7 @@ import hashlib
 
 
 class Population:	
-	def __init__(self, envName, sess, state_in, output, genSize, numParents, numGens, genLength=5, minW=0, maxW=1, crsProb=.90, mutProb=.0001, seed=None):
-		self.seed = seed
+	def __init__(self, envName, sess, state_in, output, genSize, numParents, numGens, genLength=5, minW=0, maxW=1, crsProb=.90, mutProb=.0001, deterministic=False):
 		self.best = []
 		self.kids = []
 		self.genLength = genLength
@@ -22,7 +21,7 @@ class Population:
 		self.oldGenIDs = []
 		self.sess = sess
 		for i in range(genSize):
-			self.gen.append(Indv(sess, state_in, output, gym.make(envName), minW=minW, maxW=maxW))
+			self.gen.append(Indv(sess, state_in, output, gym.make(envName), minW=minW, maxW=maxW, deterministic=deterministic))
 			
 	def run(self):
 		for i in range(self.numGens):
@@ -161,16 +160,16 @@ class Population:
 
 
 class Indv:	
-	def __init__(self, sess, state_in, output, env, minW=0, maxW=1, genome=None):
+	def __init__(self, sess, state_in, output, env, minW=0, maxW=1, deterministic=False, genome=None):
 		self.state_in = state_in
 		self.output = output
 		self.env = env
 		self.sess = sess
 		self.maxW = maxW
 		self.minW = minW
-		self.updateGenome()
+		self.determ = deterministic
+		self.updateGenome(genome)
 		self.reset()
-		self.__buildWeightDict()
 			
 	def step(self, render=False):
 		if not self.done:
@@ -178,12 +177,15 @@ class Indv:
 			feed_dict[self.state_in] = [self.input]
 			a_dist = self.sess.run(self.output,feed_dict)
 			
-			#Stochastic Selection
-			#a = np.random.choice(a_dist[0],p=a_dist[0])
-			#a = np.argmax(a_dist == a)
+			if (self.determ):
+				#Deterministic Selection
+				a = np.argmax(a_dist)
+			else:
+				#Stochastic Selection
+				a = np.random.choice(a_dist[0],p=a_dist[0])
+				a = np.argmax(a_dist == a)
 			
-			#Deterministic Selection
-			a = np.argmax(a_dist)
+			
 			
 			self.input, r, self.done, _ = self.env.step(a)
 			self.fitness += r
@@ -198,7 +200,6 @@ class Indv:
 		print(i)
 		
 	def __buildWeightDict(self):
-		#def __buildTensor(self, shape, i):
 		def __buildTensor(self, shape):
 			nonlocal i
 			if len(shape) == 1:
